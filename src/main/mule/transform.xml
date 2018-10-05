@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="27804369-13f1-4e8a-9601-16068cafdf42" basePath="/api" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="session_03_transformFlow" doc:id="c0d3baea-1f75-4fa3-9553-cd02432be6ac" >
+		<http:listener doc:name="json input" doc:id="9c335c6e-4e34-471f-80df-bfc4192306d3" config-ref="HTTP_Listener_config" path="/hello" outputMimeType="application/json"/>
+		<logger level="INFO" doc:name="json" doc:id="83e39031-0803-43b2-a6dd-765021d065e5" message='#[payload]'/>
+		<ee:transform doc:name="Transform Message" doc:id="347e47cd-6521-45fd-9d2b-08dc5c813674" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    root: {
+        customerID: payload.customerId default "",
+        name: payload.firstName! ++ " " ++ payload.lastName! default "",
+        phone: payload.phoneNumber default "",
+        
+        // Upper-case email
+        email: upper(payload.emailId default ""),
+        
+        ssn: payload.SSN  default "",
+        payloadEntries: sizeOf(payload),
+        
+        // Use regular expression group to extract user name from
+        // email
+        emailUsername: (payload.emailId match(/(\w*)@.*/))[1],
+        
+        // Use regular expression to extract host from email
+        emailHost: (payload.emailId match(/\w*@(.*)/))[1],
+        
+        // Add time-stamp
+        timestamp: now()
+    }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="xml" doc:id="2c76c1b7-b809-455b-9888-87315fdc9582" message='#[payload]'/>
+	</flow>
+</mule>
